@@ -104,7 +104,66 @@ def step_impl(context, element_name):
 # to get the element id of any button
 ##################################################################
 
-## UPDATE CODE HERE ##
+@when('I press the "{button}" button')
+def step_impl(context, button):
+    button_id = button.lower() + '-btn'
+    context.driver.find_element(By.ID, button_id).click()
+
+@then('I should see "{name}" in the results')
+def step_impl(context, name):
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element(
+            (By.ID, 'search_results'),
+            name
+        )
+    )
+    assert(found)
+
+@then('I should not see "{name}" in the results')
+def step_impl(context, name):
+    element = context.driver.find_element(By.ID, 'search_results')
+    assert(name not in element.text)
+
+@then('I should see the message "{message}"')
+def step_impl(context, message):
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element(
+            (By.ID, 'flash_message'),
+            message
+        )
+    )
+    assert(found)
+
+@then('I should see "{text}" in the "{element_name}" field')
+def step_impl(context, text, element_name):
+    element_id = ID_PREFIX + element_name.lower().replace(' ', '_')
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element_value(
+            (By.ID, element_id),
+            text
+        )
+    )
+    assert(found)
+
+@when('I click the "{button}" button for "{name}"')
+def step_impl(context, button, name):
+    # This is a bit of a hack to find the row with the name and then click the button
+    # We are assuming that the name is in the first column of the table
+    # and the button is in the last column
+    table = context.driver.find_element(By.ID, 'search_results')
+    rows = table.find_elements(By.TAG_NAME, 'tr')
+    for row in rows:
+        cells = row.find_elements(By.TAG_NAME, 'td')
+        if cells and cells[0].text == name:
+            cells[-1].find_element(By.TAG_NAME, 'button').click()
+            break
+
+@then('I should see {count} rows of data in the results')
+def step_impl(context, count):
+    table = context.driver.find_element(By.ID, 'search_results')
+    rows = table.find_elements(By.TAG_NAME, 'tr')
+    # The header row does not count
+    assert(len(rows) - 1 == int(count))
 
 ##################################################################
 # This code works because of the following naming convention:
